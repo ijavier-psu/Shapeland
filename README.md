@@ -1,5 +1,7 @@
 # Shapeland
 
+```
+
                       X                       
                      X X           X X X X X  
 X X X X X X X       X   X         X         X 
@@ -12,6 +14,8 @@ X           X X               X    X       X
                                               
                                               
   --------        Shapeland      ---------                
+
+```
 
 Shapeland park simulator: Where all the rides are shapes and all the guests are dots!
 
