@@ -1,11 +1,5 @@
 # Shapeland
-<<<<<<< HEAD
-
 ```
-
-=======
-```
->>>>>>> 51ec14ae49d49e91356798751587907794f4a669
                       X                       
                      X X           X X X X X  
 X X X X X X X       X   X         X         X 
