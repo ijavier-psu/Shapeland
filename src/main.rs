@@ -75,19 +75,7 @@ struct Dot {
     c_list: [u32; 3],
 }
 
-//impl Dot {
-//}
-
-//FIXME: make function of Coaster?
-/*
-fn get_q_time(c: &Coaster) -> u32 {
-    c.queue / c.s_rate // * TIMESCALE
-}
-*/
-
 fn display_start_stats(fpass: bool, avg_dots: u32, e_dots: u32, verbose: bool, st: bool) {
-    //NOTE: Unsafe code used because these values are only mutable at the beginning of the program
-    //they are not to be changed after the main program begins
     println!("[0] FastPass enabled: {}", fpass);
     println!("[1] Number of average guests in the park: {} ", avg_dots);
     println!(
@@ -142,15 +130,14 @@ fn change_start_stats(
             println!("Enter a number of guests (1-10000): ");
             let _ = io::stdin().read_line(&mut user_input);
 
+            //Match syntax taken from chatgpt
             match user_input.trim().parse::<u32>() {
                 Ok(number) => {
                     println!("You entered a valid number: {}", number);
                     *avg_dots = number;
-                    // You can now use 'number' as an i32
                 }
                 Err(_) => {
                     println!("That's not a valid number!");
-                    // Handle the error, e.g., prompt the user to try again
                 }
             }
         } else if user_trim == "2" {
@@ -158,15 +145,14 @@ fn change_start_stats(
             println!("Enter a number of ride crazy guests (1-10000): ");
             let _ = io::stdin().read_line(&mut user_input);
 
+            //Match syntax taken from chatgpt
             match user_input.trim().parse::<u32>() {
                 Ok(number) => {
                     println!("You entered a valid number: {}", number);
                     *e_dots = number;
-                    // You can now use 'number' as an i32
                 }
                 Err(_) => {
                     println!("That's not a valid number!");
-                    // Handle the error, e.g., prompt the user to try again
                 }
             }
         } else if user_trim == "3" {
@@ -233,7 +219,7 @@ fn main() {
     let _ = io::stdin().read_line(&mut user_input);
 
     let user_trim = user_input.trim().to_lowercase();
-    println!("{}", user_trim);
+    //println!("{}", user_trim);
     if user_trim == "y" {
         change_start_stats(
             &mut fastpass,
@@ -459,8 +445,6 @@ fn main() {
 
                         if verbose {
                             println!("{}'s Fast Pass Redeemed! Rode: {} : The {}", d.id, d.c_list[d.c_ret],rides[d.c_ret].name);
-                        }
-                        if verbose {
                             println!("pre-state: {}, t: {}", d.state, d.t_remaining);
                         }
                         if d.state == State::InQueue {
