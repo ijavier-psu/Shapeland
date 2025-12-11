@@ -1,8 +1,10 @@
 use rand::Rng;
 use std::fmt;
+use std::io;
 
 const TIMESCALE: u32 = 5; //5 minute intervals
-const NUM_DOTS: u32 = 500; //# of park guests total for the day
+const CLOSING_TIME: u32 = 9 * 60;
+//const NUM_DOTS: u32 = 500; //# of park guests total for the day
 
 
 //s_rate is number of people to leave the queue per 5 minutes
@@ -73,6 +75,7 @@ struct Dot {
    t_ret: u32,
    c_ret: usize,
    q_total: u32,
+   t_act: u32,
    c_ridden: u32,
    c_list: [u32; 3],
 }
@@ -87,12 +90,122 @@ fn get_q_time(c: &Coaster) -> u32 {
 }
 */
 
-fn displayStartStats(fpass: &mut bool){
+fn displayStartStats(fpass: bool, avg_dots: u32, e_dots: u32, verbose: bool, st: bool){
     //NOTE: Unsafe code used because these values are only mutable at the beginning of the program
     //they are not to be changed after the main program begins
     println!("[0] FastPass enabled: {}",fpass);
-    println!("[1] Number of guests in the park: {} ",NUM_DOTS);
+    println!("[1] Number of average guests in the park: {} ", avg_dots);
+    println!("[2] Number of ride enthusiast guests (longer wait time tolerance) {}",e_dots);
+    println!("[3] Verbose mode {}",verbose);
+    println!("[4] Stat tracking mode {}",st);
+    println!("[5] Done");
 
+}
+
+fn printshape(dots: u32){
+    println!("                      X");
+    println!("                     X X");
+    println!("                    X   X");
+    println!("                   X     X ");
+    println!("                  X       X");
+    println!("                 X         X");
+    println!("                X           X ");
+    println!("               X             X ");
+    print!("              X               X");
+    for i in 0..dots/10 {
+        print!("*");
+    }
+
+}
+
+fn changeStartStats(fastpass: &mut bool, avg_dots: &mut u32, e_dots: &mut u32, verbose: &mut bool, st: &mut bool){
+    let mut lop = true;
+    while lop {
+    displayStartStats(*fastpass,*avg_dots,*e_dots,*verbose,*st);
+    let mut user_input = String::new();
+    println!("Select a number to change: ");
+    io::stdin().read_line(&mut user_input);
+    let user_trim = user_input.trim();
+    println!("{}",user_trim);
+    
+    if user_trim == "0"{
+        if *fastpass{
+            println!("fastpass is now disabled");
+            *fastpass = false;
+        }
+        else{
+             println!("fastpass is now enabled");
+            *fastpass = true;
+        }
+    }
+    else if user_trim == "1"{
+        let mut user_input = String::new();
+        println!("Enter a number of guests (1-10000): ");
+        io::stdin().read_line(&mut user_input);
+
+        match user_input.trim().parse::<u32>() {
+        Ok(number) => {
+            println!("You entered a valid number: {}", number);
+            *avg_dots = number;
+            // You can now use 'number' as an i32
+        }
+        Err(_) => {
+            println!("That's not a valid number!");
+            // Handle the error, e.g., prompt the user to try again
+        }
+        }
+    }
+    else if user_trim == "2"{
+        let mut user_input = String::new();
+        println!("Enter a number of ride crazy guests (1-10000): ");
+        io::stdin().read_line(&mut user_input);
+
+        match user_input.trim().parse::<u32>() {
+        Ok(number) => {
+            println!("You entered a valid number: {}", number);
+            *e_dots = number;
+            // You can now use 'number' as an i32
+        }
+        Err(_) => {
+            println!("That's not a valid number!");
+            // Handle the error, e.g., prompt the user to try again
+        }
+        }
+    }
+    else if user_trim == "3"{
+        if *verbose{
+            println!("Verbose mode is now disabled");
+            *verbose = false;
+            
+        }
+        else{
+            println!("Verbose mode is now enabled");
+            *verbose = true;
+            
+        }
+    }
+    else if user_trim == "4"{
+        if *st{
+            println!("Stats mode is now disabled");
+            *st = false;
+            
+        }
+        else{
+            println!("Stats mode is now enabled");
+            *st = true;
+            
+        }
+    }
+    else if user_trim == "5"{
+        lop = false;
+        break;
+    }
+
+    else{
+        println!("Not recognized input. Try again");
+    }
+
+    }
 }
 
 
@@ -100,8 +213,14 @@ fn displayStartStats(fpass: &mut bool){
 fn main() {
     let mut clock = 0; //start at 9am
     let mut fastpass = true;
+    let mut verbose = false;
+    let mut stat_track = false;
 
-    //TODO: init rides
+
+    let mut NUM_DOTS = 500;
+    let mut avg_dots = 400;
+    let mut e_dots = 100;
+
     let mut rides: [Coaster; 3] = [
         Coaster {
             name: String::from("triangle"),
@@ -127,46 +246,74 @@ fn main() {
     ];
     
 
-    println!("Welcome to Shapeland!");
-    println!("Here are the default values for your day at the park:");
-    displayStartStats(&mut fastpass);
-    println!("Would you like to change anything before starting your adventure? (y/n");
-    
-    
+    println!("Welcome to Shapeland! {}",CLOSING_TIME);
+        let mut user_input = String::new();
+
+        println!("Here are the default values for your day at the park:");
+        displayStartStats(fastpass,avg_dots,e_dots,verbose,stat_track);
+        println!("Would you like to change anything before starting your adventure? (y/n)");
+        io::stdin().read_line(&mut user_input);
+
+        let user_trim = user_input.trim().to_lowercase();
+        println!("{}", user_trim);
+        if user_trim == "y" {
+            changeStartStats(&mut fastpass,&mut avg_dots, &mut e_dots, &mut verbose, &mut stat_track) 
+        }
 
     let mut rng = rand::thread_rng(); //rand # generator
+    NUM_DOTS = avg_dots + e_dots;
+
 
 
     //Average dot:
-    let avg = (7,30);
+    let avg = (7,24); //balk point = 120 min
+    let e = (9,36);
 
     //TODO: init dots
     let mut dots: Vec<Dot> = Vec::new();
-    for i in 0..NUM_DOTS{
-        dots.push(Dot { id: i, state: State::Idle, preference: avg.0, balk_point: avg.1, t_remaining: 0, t_ret: 0, c_ret: 0, q_total: 0, c_ridden: 0, c_list: [0,0,0] });
+    //for i in 0..NUM_DOTS{
+    let mut i = 0;
+    while avg_dots > 0 || e_dots > 0{
+        if avg_dots > 0{
+        dots.push(Dot { id: i, state: State::Idle, preference: avg.0, balk_point: avg.1, t_remaining: 0, t_ret: 0, t_act: 0, c_ret: 0, q_total: 0, c_ridden: 0, c_list: [0,0,0] });
+        avg_dots -=1;
+        i+=1;
+        }
+        
+        if e_dots > 0{
+            dots.push(Dot { id: i, state: State::Idle, preference: e.0, balk_point: e.1, t_remaining: 0, t_ret: 0, t_act: 0, c_ret: 0, q_total: 0, c_ridden: 0, c_list: [0,0,0] });
+            e_dots -=1;
+            i+=1;
+        }
     }
 
     println!("Hello, world!");
+    let mut cur_queue = 0;
+    let mut cur_act = 0;
     
-    while clock < 540 {
+    while clock < CLOSING_TIME {
         println!("Clock: {}, {} hours",clock, clock_hour(clock));
         
         for d in &mut dots {
-            println!("State of {} at start of time: {}",d.id, d.state);
+            if verbose { println!("State of {} at start of time: {}",d.id, d.state); }
 
             match d.state {
 
             State::Idle => {
                 while d.state == State::Idle {
+                    if d.t_ret == 1 {
+                        //skip getting new activity if fastpass almost redeemable
+                        break;
+                }
 
                 let dec = rng.gen_range(1..11); //1-10
-                println!("Dot's range: {}",dec);
+                if verbose { println!("Dot {}'s range: {}",d.id,dec); }
 
 
                 if dec <= d.preference {
-                    println!("Riding ride!");
+                    if verbose { println!("{} Wants to ride a ride!",d.id); }
                     let mut ride_choice = rng.gen_range(0..24); //FIXME
-                    println!("Ride choice: {}",ride_choice);
+                    if verbose { println!("Ride choice range: {}",ride_choice); }
                     
                     for r in 0..3 {
                         if ride_choice > rides[r].popularity {
@@ -176,35 +323,36 @@ fn main() {
 
                         //if wait time more than 30 min, check for fastpass
                         let queue_time = rides[r].get_q_time();
-                        println!("wants to ride {}, wait time {}",r,queue_time);
+                        if verbose { println!("Wants to ride {}, with wait time {}",r,queue_time); }
                         if queue_time > 6 {
                             //FIXME
                             //If i had more time, i'd keep track of coasters already checked
                             
                             //check if dot already has fastpass
                             if fastpass && d.t_ret > 0 {
-                                println!("{} Already has fastpass for {}",d.id,d.c_ret);
+                                if verbose { println!("{} Already has fastpass for {}",d.id,d.c_ret); }
                                 //already has fast pass, check if standby line is short enough
-                                if queue_time < d.t_ret {
+                                if queue_time < d.t_ret + 1 {
                                     d.state = State::InQueue;
                                     d.t_remaining = rides[r].add();
                                     d.c_ret = r;
-                                    println!("d {}'s wait time: {}",d.id,d.t_remaining);
+                                    cur_queue += 1;
+                                    if verbose { println!("d {}'s joined standby, wait time: {}",d.id,d.t_remaining); }
                                 }
                                 break;
                             }
                             
                             if fastpass && clock + queue_time < 540 {
-                                println!("Getting Fast Pass");
+                                if verbose { println!("Getting Fast Pass"); }
                                 d.t_ret = rides[r].add();
                                 d.c_ret = r;
-                                println!("d {}'s return time: {}",d.id, d.t_ret);
+                                if verbose { println!("d {}'s return time: {}",d.id, d.t_ret); }
                                 break;
                             }
 
                             //check if standby queue is longer than balking point:
                             if queue_time > d.balk_point {
-                                println!("line too long and no fastpass, returning to decision matrix");
+                                if verbose { println!("line too long and no fastpass, returning to decision matrix"); }
                                 break;
                             }
                         }
@@ -213,16 +361,18 @@ fn main() {
                         d.state = State::InQueue;
                         d.t_remaining = rides[r].add();
                         d.c_ret = r;
-                        println!("d's wait time: {}",d.t_remaining);
+                        cur_queue += 1;
+                        if verbose { println!("d's wait time: {}",d.t_remaining); }
                         break;
                     }
 
                 }
                 else {
-                    println!("Doing activity!");
+                    if verbose { println!("Doing activity!"); }
                     let mut f_dec = 4;
-                    if fastpass{
-                        println!("Fastpass time remaining: {}",d.t_ret);
+                    if fastpass {
+                        if verbose { println!("Fastpass time remaining: {}",d.t_ret); }
+                        f_dec = d.t_ret;
 
                         let dec = if f_dec > 1 { 
                             rng.gen_range(1..f_dec)
@@ -232,12 +382,14 @@ fn main() {
                         };
                         d.state = State::InActivity;
                         d.t_remaining = dec;
+                        cur_act += 1;
                         
                     }
                     else {
                         let dec = rng.gen_range(1..f_dec);
                         d.state = State::InActivity;
                         d.t_remaining = dec;
+                        cur_act += 1;
                     }
                 }
                 } //while Idle
@@ -251,13 +403,16 @@ fn main() {
                     d.state = State::Idle;
                     d.c_ridden += 1;
                     d.c_list[d.c_ret] += 1;
+                    cur_queue -= 1;
                 }
             },
             State::InActivity => {
                 //decrease time
                 d.t_remaining -= 1;
                 if d.t_remaining == 0 {
+                    d.t_act += 1;
                     d.state = State::Idle;
+                    cur_act -= 1;
                 }
             }
 
@@ -269,17 +424,27 @@ fn main() {
                     if d.t_ret == 0 {
                         d.c_ridden += 1;
                         d.c_list[d.c_ret] += 1;
-                        println!("{} Fast Pass Redeemed! Rode: {}",d.id,d.c_list[d.c_ret]);
+
+                        if verbose { println!("{}'s Fast Pass Redeemed! Rode: {}",d.id,d.c_list[d.c_ret]); }
+                        if verbose { println!("pre-state: {}, t: {}",d.state,d.t_remaining); }
+                        if d.state == State::InQueue {
+                            cur_queue -= 1;
+                        }
+                        if d.state == State::InActivity{
+                            cur_act -= 1;
+                        }
                         d.state = State::Idle;
                         continue;
                     }
                 }
             }
             
-            println!("State of {} at end of time: {}",d.id,d.state);
+            if verbose { println!("State of {} at end of time: {}",d.id,d.state); }
         }
 
         rides[0].service();
+        println!("Number of dots in a queue: {}", cur_queue);
+        println!("Number of dots in an activity: {}", cur_act);
 
         
 
@@ -292,8 +457,26 @@ fn main() {
     } //while park open
 
 
+    let mut avg_queue = 0;
+    let mut avg_ride = 0;
+
     for d in &dots {
-        println!("{} Total time in queue: {}, times ridden triangle: {} ",d.id,d.q_total,d.c_list[0]);
+        println!("{} Total time (minutes) spent in queues: {}, activities done: {} times ridden triangle: {}, square: {}, circle: {}  ",d.id,d.q_total * TIMESCALE,d.t_act, d.c_list[0],d.c_list[1],d.c_list[2]);
+        if stat_track { 
+            avg_queue += d.q_total;
+            avg_ride += d.c_ridden;
+
+        }
+    }
+
+
+    if stat_track {
+        avg_queue = avg_queue * TIMESCALE / NUM_DOTS;
+        avg_ride = avg_ride / NUM_DOTS;
+        println!("----\nAdditional stats:");
+        println!("* Average total minutes spent in a queue: {}", avg_queue);
+        println!("* Average number of rides rode: {}", avg_ride);
+
     }
 
 }
@@ -301,4 +484,17 @@ fn main() {
 
 fn clock_hour(c: u32) -> u32 {
     c / 60
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn clock_test(){
+        assert_eq!(1, clock_hour(60));
+        assert_eq!(2, clock_hour(130));
+    }
+
 }
